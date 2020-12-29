@@ -1,5 +1,5 @@
 const client = require('./index')
-const bc = new client('ghv3w6n1aw', 'j3foqyvkg3vg88uhylwqt8hq3a72b2b')
+const bc = new client('', '')
 
 ;(async _=>{
     const customers = await bc.get('v3/customers')

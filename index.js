@@ -1,6 +1,10 @@
 const fetch = require('node-fetch')
 const querystring = require('querystring')
 
+// TODO Implement Rate & Concurrency Limiting
+
+// TODO Implement Helper Class w/ Named Endpoint Methods
+
 module.exports = class {
     /**
      * Construct BigCommerceClient Instance.
@@ -39,7 +43,7 @@ module.exports = class {
         try {
             response = await fetch(this.base + endpoint, {headers:this.headers, timeout:15000})
         } catch(e){return await this.get(endpoint, queries)}
-        if (response.ok) return await response.json()
+        if (response.ok) return (await response.json()).data
         throw new Error(`${response.status} - ${response.statusText}: ${await response.text()}`)
     }
 
@@ -56,7 +60,7 @@ module.exports = class {
             response = await fetch(this.base + endpoint, {method:'post', headers:this.headers, timeout:15000, body:JSON.stringify(body)})
         } catch (e) {return await this.post(endpoint, body)}
 
-        if (response.ok) return await response.json()
+        if (response.ok) return (await response.json()).data
         throw new Error(`${response.status} - ${response.statusText}: ${await response.text()}`)
     }
 
@@ -72,7 +76,7 @@ module.exports = class {
         try {
             response = await fetch(this.base + endpoint, {method:'put', headers:this.headers, timeout:15000, body:JSON.stringify(body)})
         } catch (e) {return await this.put(endpoint, body)}
-        if (response.ok) return await response.json()
+        if (response.ok) return (await response.json()).data
         throw new Error(`${response.status} - ${response.statusText}: ${await response.text()}`)
     }
 }

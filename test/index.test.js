@@ -28,7 +28,7 @@ describe("client", () => {
     })
 
     test("should return an updated product from 'PUT v3/catalog/products'", async () => {
-        const product = await await bc.put(`v3/catalog/products/${productId}`, {price:909.99})
+        const product = await bc.put(`v3/catalog/products/${productId}`, {price:909.99})
 
         expect(product).toHaveProperty("name");
         expect(product.name).toBe(productName);

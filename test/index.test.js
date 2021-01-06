@@ -1,7 +1,8 @@
-require('dotenv').config();
+require('dotenv').config();;
+const client = require('bc-client');
 const uuid = require('uuid').v4;
-const client = require('bc-client')
-const bc = new client(process.env.STORE_HASH, process.env.STORE_TOKEN)
+const bc = new client(process.env.STORE_HASH, process.env.STORE_TOKEN);
+
 
 const productName = uuid();
 let productId;
@@ -14,7 +15,7 @@ describe("client", () => {
     })
 
     test("should return a product from 'POST v3/catalog/products'", async () => {
-        const product = await bc.post(`v3/catalog/products`, {name: productName, type:'physical', weight:1, price:99.99})
+        const product = await bc.post(`v3/catalog/products`, {name: productName, type:'physical', weight:1, price:99.99});
         productId = product.id;
 
         expect(product).toHaveProperty("name");
@@ -28,7 +29,7 @@ describe("client", () => {
     })
 
     test("should return an updated product from 'PUT v3/catalog/products'", async () => {
-        const product = await bc.put(`v3/catalog/products/${productId}`, {price:909.99})
+        const product = await bc.put(`v3/catalog/products/${productId}`, {price:909.99});
 
         expect(product).toHaveProperty("name");
         expect(product.name).toBe(productName);

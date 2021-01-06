@@ -9,8 +9,8 @@ let productId;
 describe("client", () => {
     test("should return an array from 'GET v3/customers'", async () => {
         const customers = await bc.get('v3/customers');
-            expect(customers).toHaveProperty('length');
-            expect(customers.length).toBeGreaterThan(0);
+        expect(customers).toHaveProperty('length');
+        expect(customers.length).toBeGreaterThan(0);
     })
 
     test("should return a product from 'POST v3/catalog/products'", async () => {

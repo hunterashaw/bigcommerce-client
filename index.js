@@ -1,10 +1,6 @@
 const fetch = require('node-fetch')
 const querystring = require('querystring')
 
-// TODO Implement Rate & Concurrency Limiting
-
-// TODO Implement Helper Class w/ Named Endpoint Methods
-
 module.exports = class {
     /**
      * Construct BigCommerceClient Instance.
@@ -18,6 +14,7 @@ module.exports = class {
             'Accept':'application/json',
             'Content-Type':'application/json'
         }
+        this.meta = {}
     }
 
     /**
@@ -43,9 +40,11 @@ module.exports = class {
         try {
             response = await fetch(this.base + endpoint, {headers:this.headers, timeout:15000})
         } catch(e){return await this.get(endpoint, queries)}
-        if (response.ok) return (await response.json()).data
+        if (response.ok) return await this.readResponse(response)
         throw new Error(`${response.status} - ${response.statusText}: ${await response.text()}`)
     }
+
+
 
     /**
      * Performs a POST request to the BigCommerce Management API at the specified endpoint. Throws error w/ http status information if non-200 response is returned.
@@ -59,8 +58,7 @@ module.exports = class {
         try {
             response = await fetch(this.base + endpoint, {method:'post', headers:this.headers, timeout:15000, body:JSON.stringify(body)})
         } catch (e) {return await this.post(endpoint, body)}
-
-        if (response.ok) return (await response.json()).data
+        if (response.ok) return await this.readResponse(response)
         throw new Error(`${response.status} - ${response.statusText}: ${await response.text()}`)
     }
 
@@ -69,14 +67,39 @@ module.exports = class {
      * @async
      * @returns {object} JSON data returned from a 2-- request
      * @param {string} endpoint Url endpoint from version onward (example: 'v3/catalog/products')
-     * @param {object} queries Object w/ keys & string values of each url query parameter (example: {sku:'10205'})
+     * @param {object} body Request body to be serialized and sent to endpoint
      */
     async put(endpoint, body){
         let response
         try {
             response = await fetch(this.base + endpoint, {method:'put', headers:this.headers, timeout:15000, body:JSON.stringify(body)})
         } catch (e) {return await this.put(endpoint, body)}
-        if (response.ok) return (await response.json()).data
+        if (response.ok) return await this.readResponse(response)
         throw new Error(`${response.status} - ${response.statusText}: ${await response.text()}`)
+    }
+
+    /**
+     * Performs a DELETE request to the BigCommerce Management API at the specified endpoint. Throws error w/ http status information if non-200 response is returned.
+     * @async
+     * @param {string} endpoint Url endpoint from version onward (example: 'v3/catalog/products')
+     * @param {object} queries Object w/ keys & string values of each url query parameter (example: {sku:'10205'})
+     */
+    async delete(endpoint, queries){
+        if (queries !== null) endpoint += this.buildQueries(queries)
+        let response
+        try {
+            response = await fetch(this.base + endpoint, {method:'delete', headers:this.headers, timeout:15000})
+        } catch(e){await this.delete(endpoint, queries)}
+        if (response.ok) return
+        throw new Error(`${response.status} - ${response.statusText}: ${await response.text()}`)
+    }
+
+    async readResponse(response){
+        const result = await response.text()
+        if (result.length){
+            const body = JSON.parse(result)
+            this.meta = body.meta
+            return body.data
+        } else return undefined
     }
 }

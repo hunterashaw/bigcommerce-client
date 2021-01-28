@@ -17,7 +17,7 @@ const bc = new client('storeHash', 'authToken')
     console.log('physicalProducts', physicalProducts, '\n')
 
     try {
-        let newProduct = await bc.post('v3/catalog/products', {name:'New Thinasdfg', type:'physical', weight:1, price:99.99})
+        let newProduct = await bc.post('v3/catalog/products', {name:'New Product', type:'physical', weight:1, price:99.99})
         
         console.log('newProduct', newProduct, '\n')
 

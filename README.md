@@ -1,12 +1,12 @@
-# bc-client
+# bigcommerce-client
 Simple API client for the BigCommerce Management API
 
 ## Usage
 
-`npm i bc-client`
+`npm i bigcommerce-client`
 
 ```javascript
-const client = require('bc-client')
+const client = require('bigcommerce-client')
 const bc = new client('storeHash', 'authToken')
 
 ;(async _=>{

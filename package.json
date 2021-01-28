@@ -9,7 +9,6 @@
   "author": "Hunter Shaw",
   "license": "ISC",
   "dependencies": {
-    "better-sqlite3": "^7.1.2",
     "node-fetch": "^2.6.1"
   }
 }

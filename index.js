@@ -51,14 +51,18 @@ module.exports = class {
      * @param {eachPage} eachPage Callback for each page provided by endpoint
      * @param {object} queries Object w/ keys & string values of each url query parameter (example: {sku:'10205'}). Page & limit can be passed to control start & page size.
      */
-    async paginate(endpoint, eachPage, queries={}){
-        eachPage(await this.get(endpoint, queries))
-        if (this.debug) console.log('CURRENT PAGE:', this.meta.pagination.current_page, 'TOTAL PAGES:', this.meta.pagination.total_pages)
-        if (this.meta.pagination.current_page === this.meta.pagination.total_pages) return
-        for (let current_page = this.meta.pagination.current_page + 1; current_page <= this.meta.pagination.total_pages; current_page++){
+     async paginate(endpoint, eachPage, queries={}){
+        const page = await this.get(endpoint, queries)
+        const current = this.meta.pagination.current_page
+        let total = this.meta.pagination.total_pages
+        await eachPage(page)
+
+        if (this.debug) console.log('CURRENT PAGE:', current, 'TOTAL PAGES:', total)
+        if (current === total) return
+        for (let current_page = current + 1; current_page <= total; current_page++){
             queries.page = current_page
-            eachPage(await this.get(endpoint, queries))
-            if (this.debug) console.log('CURRENT PAGE:', current_page, 'TOTAL PAGES:', this.meta.pagination.total_pages)
+            await eachPage(await this.get(endpoint, queries))
+            if (this.debug) console.log('CURRENT PAGE:', current_page, 'TOTAL PAGES:', total)
         }
     }
 

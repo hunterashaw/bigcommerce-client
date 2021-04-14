@@ -136,18 +136,16 @@ module.exports = class {
      * Performs sequential DELETE requests to the BigCommerce Management API at the specified endpoint. Will perform a getAll request, then for each ID returned, it will perform a DELETE.
      * @async
      * @param {string} endpoint Url endpoint from version onward (example: 'v3/catalog/products')
-     * @param {object} queries Object w/ keys & string values of each url query parameter (example: {sku:'10205'}). This function overwrites the limit propery to 3 to achieve high request concurrency
+     * @param {object} queries Object w/ keys & string values of each url query parameter (example: {sku:'10205'}).
+     * @param {number} limit Amount of concurrent delete requests that will be performed. If the default setting of 3 errors out, set it to 1.
      */
-    async deleteAll(endpoint, queries={}){
-        queries.limit = 3
+     async deleteAll(endpoint, queries={}, limit=3){
+        queries.limit = limit
         let items = await this.get(endpoint, queries)
         while (items.length){
-            console.log('Im about to delete this stuff', items.map((item)=>item.name))
-            await Promise.all([
-                items[0] !== undefined ? this.delete(endpoint + '/' + items[0].id) : undefined,
-                items[1] !== undefined ? this.delete(endpoint + '/' + items[1].id) : undefined,
-                items[2] !== undefined ? this.delete(endpoint + '/' + items[2].id) : undefined
-            ])
+            await Promise.all(items.map((item)=>
+                this.delete(endpoint + '/' + item.id)
+            ))
             items = await this.get(endpoint, queries)
         }
     }

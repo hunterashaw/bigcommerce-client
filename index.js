@@ -53,21 +53,17 @@ module.exports = class {
      * @param {object} queries Object w/ keys & string values of each url query parameter (example: {sku:'10205'}). Page & limit can be passed to control start & page size.
      */
      async paginate(endpoint, queries={}){
-        await this.get(endpoint, queries)
-        let current = this.meta.pagination.current_page
-        const total = this.meta.pagination.total_pages
-
-        if (this.debug) console.log('CURRENT PAGE:', current, 'TOTAL PAGES:', total);
-
-        let res = [];
-        while(current < total) {
-            current++;
+        const _paginate = (accum = [], current) => {
+            const total = this.meta.pagination.total_pages;
             queries.page = current;
-            res.push(this.get(endpoint, queries));
-            if (this.debug) console.log('CURRENT PAGE:', current, 'TOTAL PAGES:', total);
-        }
 
-        return res;
+            if (this.debug) console.log('CURRENT PAGE:', current, 'TOTAL PAGES:', total);
+
+            if(current < total) {
+                return _paginate([...accum, this.get(endpoint, queries)], current + 1)
+            } else return accum;
+        }
+        return _paginate([await this.get(endpoint, queries)], 2);
     }
 
     /**

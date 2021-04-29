@@ -55,7 +55,7 @@ module.exports = class {
      async paginate(endpoint, queries={}){
         const _paginate = (accum = [], current) => {
             const total = this.meta.pagination.total_pages;
-            queries.page = current;
+            queries.page = current + 1;
 
             if (this.debug) console.log('CURRENT PAGE:', current, 'TOTAL PAGES:', total);
 
@@ -63,7 +63,7 @@ module.exports = class {
                 return _paginate([...accum, this.get(endpoint, queries)], current + 1)
             } else return accum;
         }
-        return _paginate([await this.get(endpoint, queries)], 2);
+        return _paginate([await this.get(endpoint, queries)], 1);
     }
 
     /**

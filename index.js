@@ -1,3 +1,4 @@
+const BlueBirdProm = require('bluebird')
 const fetch = require('node-fetch')
 const querystring = require('querystring')
 
@@ -51,19 +52,18 @@ module.exports = class {
      * @param {eachPage} eachPage Callback for each page provided by endpoint
      * @param {object} queries Object w/ keys & string values of each url query parameter (example: {sku:'10205'}). Page & limit can be passed to control start & page size.
      */
-     async paginate(endpoint, eachPage, queries={}){
-        const page = await this.get(endpoint, queries)
-        const current = this.meta.pagination.current_page
-        let total = this.meta.pagination.total_pages
-        await eachPage(page)
+     async paginate(endpoint, queries={}) {
+        const _paginate = (accum = [], current) => {
+            const total = this.meta.pagination.total_pages;
+            queries.page = current + 1;
 
-        if (this.debug) console.log('CURRENT PAGE:', current, 'TOTAL PAGES:', total)
-        if (current === total) return
-        for (let current_page = current + 1; current_page <= total; current_page++){
-            queries.page = current_page
-            await eachPage(await this.get(endpoint, queries))
-            if (this.debug) console.log('CURRENT PAGE:', current_page, 'TOTAL PAGES:', total)
+            if (this.debug) console.log('CURRENT PAGE:', current, 'TOTAL PAGES:', total);
+
+            if(current < total) {
+                return _paginate([...accum, this.get(endpoint, queries)], current + 1)
+            } else return accum;
         }
+        return _paginate([await this.get(endpoint, queries)], 1);
     }
 
     /**
@@ -74,11 +74,7 @@ module.exports = class {
      * @param {object} queries Object w/ keys & string values of each url query parameter (example: {sku:'10205'})
      */
     async getAll(endpoint, queries={}){
-        let result = []
-        await this.paginate(endpoint, (items)=>{
-            result = result.concat(items)
-        }, queries)
-        return result
+        return BlueBirdProm.map(this.paginate(endpoint, queries), (prom) => prom, { concurrency: 3 })
     }
 
     /**

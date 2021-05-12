@@ -143,7 +143,7 @@ module.exports = class {
             this.status = response.status;
 
             if(!response.ok) {
-                if(response.status > 500 && attempts <= this.maxAttempts)
+                if(response.status >= 500 && attempts <= this.maxAttempts)
                     return this.readResponse(url, method, body, attempts + 1)
                 else 
                     throw new Error(`${response.status} - ${response.statusText}: ${await response.text()}`);

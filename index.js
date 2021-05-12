@@ -7,8 +7,10 @@ module.exports = class {
      * @param {string} hash Store Hash (ex: gha3w9n1at)
      * @param {string} token API Token (ex: j3aovsvag3vg88hhyl4qt89q6ag2b6b)
      * @param {boolean} debug Enable console output for every request
+     * @param {number} timeout Max time in millis for timeout (default: 15000)
+     * @param {number} maxAttempts Number of retry attempts on timeout (default: 3)
      */
-    constructor(hash, token, debug=false){
+    constructor(hash, token, debug=false, timeout=15000, maxAttempts=3){
         this.base = `https://api.bigcommerce.com/stores/${hash}/`
         this.headers = {
             'X-Auth-Token':token,
@@ -17,6 +19,9 @@ module.exports = class {
         }
         this.meta = {}
         this.debug = debug
+        this.status = undefined
+        this.maxAttempts = maxAttempts
+        this.timeout = timeout
     }
 
     /**
@@ -27,14 +32,8 @@ module.exports = class {
      * @param {object} queries Object w/ keys & string values of each url query parameter (example: {sku:'10205'})
      */
     async get(endpoint, queries={}){
-        endpoint += '?' + querystring.stringify(queries)
-        let response
-        try {
-            if (this.debug) console.log('GET', this.base + endpoint)
-            response = await fetch(this.base + endpoint, {headers:this.headers, timeout:15000})
-        } catch(e){return await this.get(endpoint, queries)}
-        if (response.ok) return await this.readResponse(response)
-        throw new Error(`${response.status} - ${response.statusText}: ${await response.text()}`)
+        const url = `${this.base}${endpoint}?${querystring.stringify(queries)}`
+        return this.readResponse(url)
     }
 
     /**
@@ -89,13 +88,8 @@ module.exports = class {
      * @param {object} body Request body to be serialized and sent to endpoint
      */
     async post(endpoint, body){
-        let response
-        try {
-            if (this.debug) console.log('POST', this.base + endpoint)
-            response = await fetch(this.base + endpoint, {method:'post', headers:this.headers, timeout:15000, body:JSON.stringify(body)})
-        } catch (e) {return await this.post(endpoint, body)}
-        if (response.ok) return await this.readResponse(response)
-        throw new Error(`${response.status} - ${response.statusText}: ${await response.text()}`)
+        const url = `${this.base}${endpoint}`
+        return this.readResponse(url, "POST",  JSON.stringify(body))
     }
 
     /**
@@ -106,13 +100,8 @@ module.exports = class {
      * @param {object} body Request body to be serialized and sent to endpoint
      */
     async put(endpoint, body){
-        let response
-        try {
-            if (this.debug) console.log('PUT', this.base + endpoint)
-            response = await fetch(this.base + endpoint, {method:'put', headers:this.headers, timeout:15000, body:JSON.stringify(body)})
-        } catch (e) {return await this.put(endpoint, body)}
-        if (response.ok) return await this.readResponse(response)
-        throw new Error(`${response.status} - ${response.statusText}: ${await response.text()}`)
+        const url = `${this.base}${endpoint}`
+        return this.readResponse(url, "PUT",  JSON.stringify(body))
     }
 
     /**
@@ -122,14 +111,8 @@ module.exports = class {
      * @param {object} queries Object w/ keys & string values of each url query parameter (example: {sku:'10205'})
      */
     async delete(endpoint, queries={}){
-        endpoint += '?' + querystring.stringify(queries)
-        let response
-        try {
-            if (this.debug) console.log('DELETE', this.base + endpoint)
-            response = await fetch(this.base + endpoint, {method:'delete', headers:this.headers, timeout:15000})
-        } catch(e){await this.delete(endpoint, queries)}
-        if (response.ok) return
-        throw new Error(`${response.status} - ${response.statusText}: ${await response.text()}`)
+        const url = `${this.base}${endpoint}?${querystring.stringify(queries)}`
+        return this.readResponse(url, "DELETE")
     }
 
     /**
@@ -150,12 +133,31 @@ module.exports = class {
         }
     }
 
-    async readResponse(response){
-        const result = await response.text()
-        if (result.length){
-            const body = JSON.parse(result)
-            this.meta = body.meta
-            return body.data
-        } else return undefined
+    async readResponse(url, method="GET", body=undefined, attempts=0){
+        if(this.debug) console.log(method, url)
+        this.status = undefined;
+
+        try {
+            const response = await fetch(url, { method, headers:this.headers, timeout:this.timeout, body });
+            
+            this.status = response.status;
+
+            if(!response.ok) {
+                if(response.status >= 500 && attempts < this.maxAttempts)
+                    return this.readResponse(url, method, body, attempts + 1)
+                else 
+                    throw new Error(`${response.status} - ${response.statusText}: ${await response.text()}`);
+            }
+
+            const result = await response.text();
+            if(result.length) {
+                const body = JSON.parse(result)
+                this.meta = body.meta
+                return body.data
+            } else return response.status;
+
+        } catch(e) {
+            throw e;
+        }
     }
 }

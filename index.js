@@ -139,7 +139,6 @@ module.exports = class {
 
         try {
             const response = await fetch(url, { method, headers:this.headers, timeout:this.timeout, body });
-            
             this.status = response.status;
 
             if(!response.ok) {
@@ -153,7 +152,7 @@ module.exports = class {
             if(result.length) {
                 const body = JSON.parse(result)
                 this.meta = body.meta
-                return body.data
+                return body.data ? body.data : body;
             } else return response.status;
 
         } catch(e) {

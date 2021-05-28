@@ -9,7 +9,7 @@ Simple API client for the BigCommerce Management API
 
 ```javascript
 const bc_client = require('bigcommerce-client')
-const store = new client('storeHash', 'authToken')
+const store = new bc_client('storeHash', 'authToken')
 ```
 
 ### Get a Resource
@@ -32,7 +32,7 @@ async function getOutOfStock(sku){
 
 ```javascript
 async function updateOutOfStock(sku){
-    await store.paginate('v3/catalog/products', (products)=>{
+    await store.paginate('v3/catalog/products', async (products)=>{
         await store.put('v3/catalog/products', products.map((product)=>{
             product.inventory_level = 1
             return product

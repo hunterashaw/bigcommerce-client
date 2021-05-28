@@ -49,8 +49,9 @@ module.exports = class {
      * @param {string} endoint Url endpoint from version onward (example: 'v3/catalog/products')
      * @param {eachPage} eachPage Callback for each page provided by endpoint
      * @param {object} queries Object w/ keys & string values of each url query parameter (example: {sku:'10205'}). Page & limit can be passed to control start & page size.
+     * @param {number} concurrency Amount of concurrent requests to make. Isn't a
      */
-     async paginate(endpoint, eachPage, queries={}){
+     async paginate(endpoint, eachPage, queries={}, concurrency=3){
         const page = await this.get(endpoint, queries)
         const current = this.meta.pagination.current_page
         let total = this.meta.pagination.total_pages
@@ -58,9 +59,21 @@ module.exports = class {
 
         if (this.debug) console.log('CURRENT PAGE:', current, 'TOTAL PAGES:', total)
         if (current === total) return
-        for (let current_page = current + 1; current_page <= total; current_page++){
-            queries.page = current_page
-            await eachPage(await this.get(endpoint, queries))
+        for (let current_page = current + 1; current_page <= total; current_page+=concurrency){
+            const pages = await Promise.all([ // Produces an array of concurrent request results
+                ...(() => {
+                    const requests = []
+                    for (let count = 0; count < concurrency; count++) {
+                        queries.page = current_page + count
+                        if (queries.page <= total) // Skip requests outside of total pages
+                            requests.push(this.get(endpoint, queries)) // Create one request per concurrency
+                    }
+                    return requests
+                })()
+            ])
+            
+            for (const page of pages) await eachPage(page)
+             
             if (this.debug) console.log('CURRENT PAGE:', current_page, 'TOTAL PAGES:', total)
         }
     }

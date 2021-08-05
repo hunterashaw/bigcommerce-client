@@ -100,7 +100,7 @@ module.exports = class {
      * @param {string} endpoint Url endpoint from version onward (example: 'v3/catalog/products')
      * @param {object} body Request body to be serialized and sent to endpoint
      */
-    async post(endpoint, body){
+    async post(endpoint, body={}){
         const url = `${this.base}${endpoint}`
         return this.readResponse(url, "POST",  JSON.stringify(body))
     }

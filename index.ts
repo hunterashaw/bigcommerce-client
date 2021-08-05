@@ -2,7 +2,7 @@ import fetch from 'node-fetch'
 import querystring, { ParsedUrlQueryInput } from 'querystring'
 import { IBCMeta, HTTPMethods } from 'common/interfaces'
 
-class BigCommerceClient {
+export default class BigCommerceClient {
     base: string
     headers: {
         'X-Auth-Token': string,
@@ -141,6 +141,7 @@ class BigCommerceClient {
      */
     delete(endpoint: string, queries: ParsedUrlQueryInput={}) {
         const url = `${this.base}${endpoint}?${querystring.stringify(queries)}`
+
         return this.readResponse(url, "DELETE")
     }
 
@@ -191,5 +192,3 @@ class BigCommerceClient {
         }
     }
 }
-
-module.exports = BigCommerceClient

@@ -1,16 +1,18 @@
-/// <reference types="node" />
+import { ParsedUrlQueryInput } from "querystring";
+
 export default class BigCommerceClient {
-    base: string;
+    base: string
     headers: {
-        'X-Auth-Token': string;
-        'Accept': 'application/json';
-        'Content-Type': 'application/json';
-    };
-    meta: object;
-    debug: boolean;
-    status?: number;
-    maxAttempts: number;
-    timeout: number;
+        "X-Auth-Token": string
+        Accept: "application/json"
+        "Content-Type": "application/json"
+    }
+    meta: object
+    debug: boolean
+    status?: number
+    maxAttempts: number
+    timeout: number
+
     /**
      * Construct BigCommerceClient Instance.
      * @param {string} hash Store Hash (ex: gha3w9n1at)
@@ -19,7 +21,13 @@ export default class BigCommerceClient {
      * @param {number} timeout Max time in millis for timeout (default: 15000)
      * @param {number} maxAttempts Number of retry attempts on timeout (default: 3)
      */
-    constructor(hash: string, token: string, debug?: boolean, timeout?: number, maxAttempts?: number)
+    constructor(
+        hash: string,
+        token: string,
+        debug?: boolean,
+        timeout?: number,
+        maxAttempts?: number
+    )
 
     /**
      * Performs a GET request to the BigCommerce Management API at the specified endpoint. Throws error w/ http status information if non-200 response is returned.
@@ -37,17 +45,20 @@ export default class BigCommerceClient {
 
     /**
      * Performs sequential GET requests to the BigCommerce Management API at the specified endpoint. For each page in query it will perform the provided callback, passing an array of objects in page.
-     * @async
-     * @returns {Promise}
-     * @param {string} endoint Url endpoint from version onward (example: 'v3/catalog/products')
-     * @param {eachPage} eachPage Callback for each page provided by endpoint
+     * @generator
+     * @param {string} endpoint Url endpoint from version onward (example: 'v3/catalog/products')
      * @param {object} queries Object w/ keys & string values of each url query parameter (example: {sku:'10205'}). Page & limit can be passed to control start & page size.
-     * @param {number} concurrency Amount of concurrent requests to make. Isn't a
+     * @param {number} concurrency Amount of concurrent requests to make
+     * @yields {Promise<[Array, number, number]>}
      */
-    paginate(endpoint: string, eachPage: (page: object[]) => void, queries?: object, concurrency?: number): Promise<void>
+    paginate<T>(
+        endpoint: string,
+        queries?: object,
+        concurrency?: number
+    ): AsyncGenerator<[Array<T>, number, number], never, void>
 
     /**
-     * Performs sequential GET request to the BigCommerce Management API at the specified endpoint. Concatenates results from all pages.
+     * Performs sequential GET request to the BigCommerce Management API at the specified endpoint. Concatenates result from all pages.
      * @async
      * @returns {object[]} Concatenated JSON data returned from a 2-- request
      * @param {string} endpoint Url endpoint from version onward (example: 'v3/catalog/products')

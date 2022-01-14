@@ -37,29 +37,24 @@ module.exports = class {
     }
 
     /**
-     * Function to perform on each page returned by endpoint. Should accept an array of objects from page.
-     * @callback eachPage
-     * @param {object[]} pageContents
-     */
-
-    /**
      * Performs sequential GET requests to the BigCommerce Management API at the specified endpoint. For each page in query it will perform the provided callback, passing an array of objects in page.
      * @async
      * @returns {null}
-     * @param {string} endoint Url endpoint from version onward (example: 'v3/catalog/products')
-     * @param {eachPage} eachPage Callback for each page provided by endpoint
+     * @param {string} endpoint Url endpoint from version onward (example: 'v3/catalog/products')
      * @param {object} queries Object w/ keys & string values of each url query parameter (example: {sku:'10205'}). Page & limit can be passed to control start & page size.
      * @param {number} concurrency Amount of concurrent requests to make. Isn't a
      */
-     async paginate(endpoint, eachPage, queries={}, concurrency=3){
+    async* paginate(endpoint, queries={}, concurrency=3){
         const page = await this.get(endpoint, queries)
         const current = this.meta.pagination.current_page
         let total = this.meta.pagination.total_pages
-        await eachPage(page)
+
+        yield [page, current, total];
 
         if (this.debug) console.log('CURRENT PAGE:', current, 'TOTAL PAGES:', total)
         if (current === total) return
-        for (let current_page = current + 1; current_page <= total; current_page+=concurrency){
+
+        for (let current_page = current + 1; current_page <= total; current_page += concurrency){
             const pages = await Promise.all([ // Produces an array of concurrent request results
                 ...(() => {
                     const requests = []
@@ -71,9 +66,9 @@ module.exports = class {
                     return requests
                 })()
             ])
-            
-            for (const page of pages) await eachPage(page)
-             
+
+            for (const page of pages) yield [page, current_page, total]
+
             if (this.debug) console.log('CURRENT PAGE:', current_page, 'TOTAL PAGES:', total)
         }
     }
@@ -87,9 +82,9 @@ module.exports = class {
      */
     async getAll(endpoint, queries={}){
         let result = []
-        await this.paginate(endpoint, (items)=>{
-            result = result.concat(items)
-        }, queries)
+
+        for await(const items of this.paginate(endpoint, queries)) result = result.concat(items)
+
         return result
     }
 
@@ -157,7 +152,7 @@ module.exports = class {
             if(!response.ok) {
                 if(response.status >= 500 && attempts < this.maxAttempts)
                     return this.readResponse(url, method, body, attempts + 1)
-                else 
+                else
                     throw new Error(`${response.status} - ${response.statusText}: ${await response.text()}`);
             }
 
